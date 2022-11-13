@@ -5,16 +5,20 @@
 
 # Parcelvoy iOS SDK
 
-## Version Information
+
+
+## Installation
+Installing the Parcelvoy iOS SDK will provide you with basic tracking functionality and user identification. The iOS SDK is available through common package managers or through manual installation.
+
+### Package Managers
+- Swift Package Manager
+- CocoaPods
+
+### Version Information
 - The Parcelvoy iOS SDK supports
   - iOS 12.0+
   - Mac Catalyst 13.0+
 - Xcode 13.2.1 (13C100) or newer
-
-## Installation
-Installing the Parcelvoy iOS SDK will provide you with basic tracking functionality and user identification. The iOS SDK is available through either:
-- Swift Package Manager
-- CocoaPods
 
 ## Usage
 ### Initialize
