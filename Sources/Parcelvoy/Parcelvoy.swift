@@ -48,12 +48,18 @@ public class Parcelvoy {
     ///     - apiKey: A generated public API key
     ///     - urlEndpoint: The based domain of the hosted Parcelvoy instance
     ///
-    public func initialize(apiKey: String, urlEndpoint: String) {
-        self.config = Config(apiKey: apiKey, urlEndpoint: urlEndpoint)
+    public static func initialize(apiKey: String, urlEndpoint: String): Parcelvoy {
+        return Self.shared.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint)
     }
 
-    public func initialize(config: Config) {
+    public func initialize(apiKey: String, urlEndpoint: String): Parcelvoy {
+        self.config = Config(apiKey: apiKey, urlEndpoint: urlEndpoint)
+        return self
+    }
+
+    public func initialize(config: Config): Parcelvoy {
         self.config = config
+        return self
     }
 
     /// Identify a given user
