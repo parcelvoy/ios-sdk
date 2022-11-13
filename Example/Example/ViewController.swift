@@ -6,8 +6,9 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let apiKey = "pk_3f45d77c-4581-11ed-8b0b-0242ac110002"
-        let urlEndpoint = "https://99dc474bf639.ngrok.io"
+        // TODO: Enter API Key and URL
+        let apiKey = ""
+        let urlEndpoint = ""
 
         let pv = Parcelvoy.shared
         pv.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint)
@@ -17,7 +18,17 @@ class ViewController: UIViewController {
             "last_name": "Doe"
         ])
 
-        pv.track()
+        pv.track(event: "Application Opened", properties: [ "property": true ])
+    }
+
+    @IBAction func registerPushNotifications() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            print("PV | Notification Status: \(granted)")
+            DispatchQueue.main.async {
+                if granted { UIApplication.shared.registerForRemoteNotifications() }
+            }
+        }
     }
 }
 
