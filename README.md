@@ -52,6 +52,7 @@ Parcelvoy.shared.track(
         "Key": "Value"
     ]
 )
+```
 
 ### Register Device
 In order to send push notifications to a given device you need to register for notifications and then register the device with Parcelvoy. You can do so by using the `register(token: Data?)` method. If a user does not grant access to send notifications, you can also call this method without a token to register device characteristics.
