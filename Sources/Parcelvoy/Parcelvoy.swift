@@ -2,7 +2,7 @@ import Foundation
 
 public class Parcelvoy {
 
-    enum StoreKeyName: String {
+    enum StoreKey: String {
         case externalId
         case anonymousId
     }
@@ -11,12 +11,16 @@ public class Parcelvoy {
 
     private var externalId: String? {
         didSet {
-            self.store?.set(externalId, forKey: StoreKeyName.externalId.rawValue)
+            if externalId != nil {
+                self.store?.set(externalId, forKey: StoreKey.externalId.rawValue)
+            } else {
+                self.store?.removeObject(forKey: StoreKey.externalId.rawValue)
+            }
         }
     }
-    private var anonymousId: String {
+    private(set) var anonymousId: String {
         didSet {
-            self.store?.set(anonymousId, forKey: StoreKeyName.anonymousId.rawValue)
+            self.store?.set(anonymousId, forKey: StoreKey.anonymousId.rawValue)
         }
     }
     private var config: Config? {
@@ -31,12 +35,12 @@ public class Parcelvoy {
     private var store = UserDefaults(suiteName: "Parcelvoy")
 
     public init() {
-        self.externalId = self.store?.string(forKey: StoreKeyName.externalId.rawValue)
-        if let anonymousId = self.store?.string(forKey: StoreKeyName.anonymousId.rawValue) {
+        self.externalId = self.store?.string(forKey: StoreKey.externalId.rawValue)
+        if let anonymousId = self.store?.string(forKey: StoreKey.anonymousId.rawValue) {
             self.anonymousId = anonymousId
         } else {
             self.anonymousId = UUID().uuidString
-            store?.set(self.anonymousId, forKey: StoreKeyName.anonymousId.rawValue)
+            store?.set(self.anonymousId, forKey: StoreKey.anonymousId.rawValue)
         }
     }
 
@@ -48,16 +52,16 @@ public class Parcelvoy {
     ///     - apiKey: A generated public API key
     ///     - urlEndpoint: The based domain of the hosted Parcelvoy instance
     ///
-    public static func initialize(apiKey: String, urlEndpoint: String): Parcelvoy {
+    public static func initialize(apiKey: String, urlEndpoint: String) -> Parcelvoy {
         return Self.shared.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint)
     }
 
-    public func initialize(apiKey: String, urlEndpoint: String): Parcelvoy {
+    public func initialize(apiKey: String, urlEndpoint: String) -> Parcelvoy {
         self.config = Config(apiKey: apiKey, urlEndpoint: urlEndpoint)
         return self
     }
 
-    public func initialize(config: Config): Parcelvoy {
+    public func initialize(config: Config) -> Parcelvoy {
         self.config = config
         return self
     }
@@ -160,6 +164,13 @@ public class Parcelvoy {
             token: token?.hexString
         )
         self.network?.post(path: "devices", object: device)
+    }
+
+    /// Reset session such that a new anonymous ID is generated
+    ///
+    public func reset() {
+        self.anonymousId = UUID().uuidString
+        self.externalId = nil
     }
 
     private func checkInit() {
