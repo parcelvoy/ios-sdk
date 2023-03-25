@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 public class Parcelvoy {
 
@@ -52,16 +53,29 @@ public class Parcelvoy {
     ///     - apiKey: A generated public API key
     ///     - urlEndpoint: The based domain of the hosted Parcelvoy instance
     ///
-    public static func initialize(apiKey: String, urlEndpoint: String) -> Parcelvoy {
-        return Self.shared.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint)
+    @discardableResult
+    public static func initialize(
+        apiKey: String,
+        urlEndpoint: String,
+        launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Parcelvoy {
+        return Self.shared.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint, launchOptions: launchOptions)
     }
 
-    public func initialize(apiKey: String, urlEndpoint: String) -> Parcelvoy {
-        self.config = Config(apiKey: apiKey, urlEndpoint: urlEndpoint)
-        return self
+    @discardableResult
+    public func initialize(
+        apiKey: String,
+        urlEndpoint: String,
+        launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Parcelvoy {
+        return self.initialize(config: Config(apiKey: apiKey, urlEndpoint: urlEndpoint), launchOptions: launchOptions)
     }
 
-    public func initialize(config: Config) -> Parcelvoy {
+    @discardableResult
+    public func initialize(
+        config: Config,
+        launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Parcelvoy {
         self.config = config
         return self
     }
@@ -164,6 +178,43 @@ public class Parcelvoy {
             token: token?.hexString
         )
         self.network?.post(path: "devices", object: device)
+    }
+
+    /// Handle deeplink navigation
+    ///
+    /// To allow for click tracking, all emails are click-wrapped in a Parcelvoy url
+    /// that then needs to be unwrapped for navigation purposes. This method
+    /// checks to see if a given URL is a Parcelvoy URL and if so, unwraps the url,
+    /// triggers the unwrapped URL and calls the Parcelvoy API to register that the
+    /// URL was executed.
+    ///
+    /// - Parameters:
+    ///     - universalLink: The URL that the app is trying to open
+    public func handle(universalLink: URL) -> Bool {
+        guard isParcelvoyDeepLink(url: universalLink.absoluteString),
+            let queryParams = universalLink.queryParameters,
+              let redirect = queryParams["r"] else {
+            return false
+        }
+
+        /// Run the URL so that the redirect events get triggered at API
+        var request = URLRequest(url: universalLink)
+        request.httpMethod = "GET"
+        self.network?.request(request: request)
+
+        /// Manually redirect to the URL included in the parameter
+        let url = URL(string: redirect)!
+        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+
+        return true
+    }
+
+    public func isParcelvoyDeepLink(url: String) -> Bool {
+        guard let regex = try? NSRegularExpression(pattern: "/c/[a-zA-Z0-9]+", options: []) else {
+            return false
+        }
+
+        return regex.firstMatch(in: url, options: [], range: NSMakeRange(0, url.count)) != nil
     }
 
     /// Reset session such that a new anonymous ID is generated

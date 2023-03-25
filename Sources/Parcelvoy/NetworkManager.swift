@@ -10,7 +10,6 @@ class NetworkManager {
 
     func post(path: String, object: Encodable, handler: ((Error?) -> Void)? = nil) {
         let url = URL(string: "\(config.urlEndpoint)/client/\(path)")!
-        print(url)
 
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -23,8 +22,6 @@ class NetworkManager {
         encoder.keyEncodingStrategy = .convertToSnakeCase
         request.httpBody = try? encoder.encode(object)
 
-        print(request)
-
         self.request(request: request, handler: handler)
     }
 
@@ -36,8 +33,8 @@ class NetworkManager {
             }
 
             guard (200 ... 299) ~= response.statusCode else {
-                print("statusCode should be 2xx, but is \(response.statusCode)")
-                print("response = \(response)")
+                print("PV | statusCode should be 2xx, but is \(response.statusCode)")
+                print("PV | response = \(response)")
                 return
             }
 

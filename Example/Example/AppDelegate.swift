@@ -4,6 +4,13 @@ import Parcelvoy
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+        // TODO: Enter API Key and URL
+        let apiKey = ""
+        let urlEndpoint = ""
+
+        Parcelvoy.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint, launchOptions: launchOptions)
+
         // Override point for customization after application launch.
         return true
     }
@@ -25,6 +32,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         print("PV | Got Token", deviceToken)
         Parcelvoy.shared.register(token: deviceToken)
+    }
+
+    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+
+        guard let url = userActivity.webpageURL else {
+            return false
+        }
+
+        return Parcelvoy.shared.handle(universalLink: url)
     }
 }
 
