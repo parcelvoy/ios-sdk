@@ -6,6 +6,7 @@ public class Parcelvoy {
     enum StoreKey: String {
         case externalId
         case anonymousId
+        case deviceId
     }
 
     public static let shared = Parcelvoy()
@@ -24,6 +25,11 @@ public class Parcelvoy {
             self.store?.set(anonymousId, forKey: StoreKey.anonymousId.rawValue)
         }
     }
+    private(set) var deviceId: String {
+        didSet {
+            self.store?.set(deviceId, forKey: StoreKey.deviceId.rawValue)
+        }
+    }
     private var config: Config? {
         didSet {
             if let config = config {
@@ -36,6 +42,7 @@ public class Parcelvoy {
     private var store = UserDefaults(suiteName: "Parcelvoy")
 
     public init() {
+        self.deviceId = UUID().uuidString
         self.externalId = self.store?.string(forKey: StoreKey.externalId.rawValue)
         if let anonymousId = self.store?.string(forKey: StoreKey.anonymousId.rawValue) {
             self.anonymousId = anonymousId
@@ -174,6 +181,7 @@ public class Parcelvoy {
         self.checkInit()
         let device = Device(
             anonymousId: self.anonymousId,
+            deviceId: self.deviceId,
             externalId: self.externalId,
             token: token?.hexString
         )

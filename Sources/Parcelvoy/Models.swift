@@ -54,6 +54,7 @@ struct Event: Encodable {
 struct Device: Codable {
     let anonymousId: String
     let externalId: String?
+    let deviceId: String
     let token: String?
     let os: String
     let osVersion: String
@@ -61,8 +62,9 @@ struct Device: Codable {
     let appBuild: String
     let appVersion: String
 
-    init(anonymousId: String, externalId: String?, token: String?) {
+    init(anonymousId: String, deviceId: String, externalId: String?, token: String?) {
         self.anonymousId = anonymousId
+        self.deviceId = deviceId
         self.externalId = externalId
         self.token = token
         self.os = "iOS"
