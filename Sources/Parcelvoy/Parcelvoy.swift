@@ -218,7 +218,7 @@ public class Parcelvoy {
     }
 
     public func isParcelvoyDeepLink(url: String) -> Bool {
-        guard let regex = try? NSRegularExpression(pattern: "/c/[a-zA-Z0-9]+", options: []) else {
+        guard let regex = try? NSRegularExpression(pattern: "\\/c(?:\\/)?.*", options: []) else {
             return false
         }
 
