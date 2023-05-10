@@ -201,7 +201,8 @@ public class Parcelvoy {
     public func handle(universalLink: URL) -> Bool {
         guard isParcelvoyDeepLink(url: universalLink.absoluteString),
             let queryParams = universalLink.queryParameters,
-              let redirect = queryParams["r"] else {
+              let redirect = queryParams["r"]?.removingPercentEncoding,
+              let redirectUrl = URL(string: redirect) else {
             return false
         }
 
@@ -211,9 +212,8 @@ public class Parcelvoy {
         self.network?.request(request: request)
 
         /// Manually redirect to the URL included in the parameter
-        let url = URL(string: redirect)!
         let userActivity =  NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
-        userActivity.webpageURL = url
+        userActivity.webpageURL = redirectUrl
         let _ = UIApplication.shared.delegate?.application?(
             UIApplication.shared,
             continue: userActivity,
