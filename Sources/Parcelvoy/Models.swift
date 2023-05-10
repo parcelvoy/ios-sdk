@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 public struct Config {
     let apiKey: String
@@ -68,7 +69,7 @@ struct Device: Codable {
         self.externalId = externalId
         self.token = token
         self.os = "iOS"
-        self.osVersion = ProcessInfo().operatingSystemVersionString
+        self.osVersion = UIDevice.current.systemVersion
         self.model = Self.model
         self.appBuild = Self.appBuild
         self.appVersion = Self.appVersion
