@@ -42,7 +42,7 @@ Parcelvoy.shared.identify(id: "USER_ID", traits: [
 ```
 
 ### Events
-If you wnat to trigger journey and list updates off of things a user does within your app, you can pass up those events by using the `track` method.
+If you want to trigger a journey and list updates off of things a user does within your app, you can pass up those events by using the `track` method.
 ```swift
 Parcelvoy.shared.track(
     event: "Event Name",
