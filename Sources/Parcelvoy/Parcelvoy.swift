@@ -212,17 +212,21 @@ public class Parcelvoy {
 
         /// Manually redirect to the URL included in the parameter
         let url = URL(string: redirect)!
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)
-
+        let userActivity =  NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
+        userActivity.webpageURL = url
+        let _ = UIApplication.shared.delegate?.application?(
+            UIApplication.shared,
+            continue: userActivity,
+            restorationHandler: { _ in }
+        )
         return true
     }
 
     public func isParcelvoyDeepLink(url: String) -> Bool {
-        guard let regex = try? NSRegularExpression(pattern: "\\/c(?:\\/)?.*", options: []) else {
+        guard let endpoint = self.config?.urlEndpoint else {
             return false
         }
-
-        return regex.firstMatch(in: url, options: [], range: NSMakeRange(0, url.count)) != nil
+        return url.starts(with: "\(endpoint)/c")
     }
 
     /// Reset session such that a new anonymous ID is generated
