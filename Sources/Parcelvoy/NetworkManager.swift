@@ -9,7 +9,7 @@ class NetworkManager {
     }
 
     func post(path: String, object: Encodable, handler: ((Error?) -> Void)? = nil) {
-        let url = URL(string: "\(config.urlEndpoint)/client/\(path)")!
+        let url = URL(string: "\(config.urlEndpoint)/api/client/\(path)")!
 
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
