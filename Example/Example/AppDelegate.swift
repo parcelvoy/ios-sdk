@@ -34,6 +34,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Parcelvoy.shared.register(token: deviceToken)
     }
 
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any]) async -> UIBackgroundFetchResult {
+        Parcelvoy.shared.handle(application, userInfo: userInfo)
+        return .newData
+    }
+
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
 
         guard let url = userActivity.webpageURL else {

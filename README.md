@@ -52,13 +52,27 @@ Parcelvoy.shared.track(
 )
 ```
 
-### Register Device
+### Notifications
+#### Register Device
 In order to send push notifications to a given device you need to register for notifications and then register the device with Parcelvoy. You can do so by using the `register(token: Data?)` method. If a user does not grant access to send notifications, you can also call this method without a token to register device characteristics.
 ```swift
 Parcelvoy.shared.register(token: "APN_TOKEN_DATA")
 ```
 
-### Deeplink Navigation
+#### Handle Notifications
+When a notification is received it can contain a deeplink that will trigger when a user opens it. To properly handle the routing you need to pass the received push notification to the Parcelvoy handler.
+```swift
+func application(
+    _ application: UIApplication,
+    didReceiveRemoteNotification userInfo: [AnyHashable : Any]
+) async -> UIBackgroundFetchResult {
+    Parcelvoy.shared.handle(application, userInfo: userInfo)
+    return .newData
+}
+                     
+```
+
+### Deeplink & Universal Link Navigation
 To allow for click tracking links in emails can be click-wrapped in a Parcelvoy url that then needs to be unwrapped for navigation purposes. For information on setting this up on your platform, please see our [deeplink documentation](https://docs.parcelvoy.com/advanced/deeplinking).
 
 Parcelvoy includes a method which checks to see if a given URL is a Parcelvoy URL and if so, unwraps the url, triggers the unwrapped URL and calls the Parcelvoy API to register that the URL was executed.

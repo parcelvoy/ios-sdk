@@ -198,6 +198,8 @@ public class Parcelvoy {
     ///
     /// - Parameters:
     ///     - universalLink: The URL that the app is trying to open
+    ///
+    @discardableResult
     public func handle(universalLink: URL) -> Bool {
         guard isParcelvoyDeepLink(url: universalLink.absoluteString),
             let queryParams = universalLink.queryParameters,
@@ -212,14 +214,29 @@ public class Parcelvoy {
         self.network?.request(request: request)
 
         /// Manually redirect to the URL included in the parameter
-        let userActivity =  NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
-        userActivity.webpageURL = redirectUrl
-        let _ = UIApplication.shared.delegate?.application?(
-            UIApplication.shared,
-            continue: userActivity,
-            restorationHandler: { _ in }
-        )
+        open(url: redirectUrl)
         return true
+    }
+
+    /// Handle push notification receipt
+    ///
+    /// Push notifications may come with an internal redirect to execute when
+    /// the notification is opened. This method opens a URL if one is provided
+    /// and returns if there was a match or not.
+    ///
+    /// - Parameters:
+    ///     - application: The application surounding the context of the notification
+    ///     - userInfo: The dictionary of attributes included in the notification
+    ///
+    @discardableResult
+    public func handle(_ application: UIApplication, userInfo: [AnyHashable: Any]) -> Bool {
+        if let _ = userInfo["method"] as? String,
+           let urlString = userInfo["url"] as? String,
+           let url = URL(string: urlString) {
+            open(url: url)
+            return true
+        }
+        return false
     }
 
     public func isParcelvoyDeepLink(url: String) -> Bool {
@@ -227,6 +244,16 @@ public class Parcelvoy {
             return false
         }
         return url.starts(with: "\(endpoint)/c")
+    }
+
+    private func open(url: URL) {
+        let userActivity =  NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
+        userActivity.webpageURL = url
+        let _ = UIApplication.shared.delegate?.application?(
+            UIApplication.shared,
+            continue: userActivity,
+            restorationHandler: { _ in }
+        )
     }
 
     /// Reset session such that a new anonymous ID is generated
