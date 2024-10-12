@@ -233,7 +233,9 @@ public class Parcelvoy {
         if let _ = userInfo["method"] as? String,
            let urlString = userInfo["url"] as? String,
            let url = URL(string: urlString) {
-            open(url: url)
+            if !handle(universalLink: url) {
+                open(url: url)
+            }
             return true
         }
         return false
