@@ -255,7 +255,10 @@ public class Parcelvoy {
 
         if #available(iOS 13.0, *) {
             // SceneDelegate apps
-            UIApplication.shared.requestSceneSessionActivation(nil, userActivity: activity, options: nil, errorHandler: nil)
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let delegate = scene.delegate {
+                delegate.scene?(scene, continue: activity)
+            }
         } else {
             // AppDelegate-only apps
             let _ = UIApplication.shared.delegate?.application?(
