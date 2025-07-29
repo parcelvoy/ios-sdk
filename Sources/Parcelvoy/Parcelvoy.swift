@@ -253,7 +253,7 @@ public class Parcelvoy {
         let activity = NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
         activity.webpageURL = url
 
-        if #available(iOS 13.0, *), UIApplication.shared.supportsMultipleScenes {
+        if #available(iOS 13.0, *) {
             // SceneDelegate apps
             UIApplication.shared.requestSceneSessionActivation(nil, userActivity: activity, options: nil, errorHandler: nil)
         } else {
