@@ -1,15 +1,26 @@
 import UIKit
 import Parcelvoy
 
+class CustomInAppDelegate: InAppDelegate {
+    func handle(action: InAppAction, context: [String : AnyObject], notification: ParcelvoyNotification) {
+        print("PV | Action: \(action) \(context)")
+    }
+}
+
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
         // TODO: Enter API Key and URL
-        let apiKey = ""
-        let urlEndpoint = ""
+        let apiKey = "pk_3f45d77c-4581-11ed-8b0b-0242ac110003"
+        let urlEndpoint = "https://f849598081b8.ngrok.app"
 
-        Parcelvoy.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint, launchOptions: launchOptions)
+        Parcelvoy.initialize(
+            apiKey: apiKey,
+            urlEndpoint: urlEndpoint,
+            inAppDelegate: CustomInAppDelegate(),
+            launchOptions: launchOptions
+        )
 
         // Override point for customization after application launch.
         return true

@@ -41,6 +41,11 @@ public class Parcelvoy {
     private var network: NetworkManager?
     private var store = UserDefaults(suiteName: "Parcelvoy")
 
+    private var inAppDelegate: InAppDelegate? {
+        get { config?.inAppDelegate }
+    }
+    private var inAppController: UIViewController?
+
     public init() {
         self.deviceId = UUID().uuidString
         self.externalId = self.store?.string(forKey: StoreKey.externalId.rawValue)
@@ -64,18 +69,24 @@ public class Parcelvoy {
     public static func initialize(
         apiKey: String,
         urlEndpoint: String,
+        inAppDelegate: InAppDelegate? = nil,
         launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Parcelvoy {
-        return Self.shared.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint, launchOptions: launchOptions)
+        return Self.shared.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint, inAppDelegate: inAppDelegate, launchOptions: launchOptions)
     }
 
     @discardableResult
     public func initialize(
         apiKey: String,
         urlEndpoint: String,
+        inAppDelegate: InAppDelegate? = nil,
         launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Parcelvoy {
-        return self.initialize(config: Config(apiKey: apiKey, urlEndpoint: urlEndpoint), launchOptions: launchOptions)
+        return self.initialize(config: Config(
+            apiKey: apiKey,
+            urlEndpoint: urlEndpoint,
+            inAppDelegate: inAppDelegate
+        ), launchOptions: launchOptions)
     }
 
     @discardableResult
@@ -84,7 +95,13 @@ public class Parcelvoy {
         launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Parcelvoy {
         self.config = config
+        self.boot()
         return self
+    }
+
+    private func boot() {
+        if inAppDelegate?.autoShow == true { self.showLatestNotification()
+        }
     }
 
     /// Identify a given user
@@ -188,6 +205,58 @@ public class Parcelvoy {
         self.network?.post(path: "devices", object: device)
     }
 
+    public typealias Cursor = String
+    public func getNofications(handler: @escaping  (Result<Page<ParcelvoyNotification>, Error>) -> Void) {
+        let user = Alias(anonymousId: self.anonymousId, externalId: self.externalId)
+        self.network?.get(path: "notifications", user: user, handler: handler)
+    }
+
+    public func showLatestNotification() {
+        self.getNofications { result in
+            print(result)
+            switch result {
+            case .failure(let error): print(error)
+            case .success(let notifications):
+                guard let notification = notifications.results.first else {
+                    return
+                }
+                if let response = self.inAppDelegate?.onNew(notification: notification), response == .show {
+                    self.show(notification: notification)
+                }
+            }
+        }
+    }
+
+    public func show(notification: ParcelvoyNotification) {
+        // Find app delegate
+        // Get the window
+        // Show view on whatever the primary window is
+
+        // Store previous window
+        let window = UIApplication
+            .shared
+            .connectedScenes
+            .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
+            .last { $0.isKeyWindow }
+        guard let window = window else { return }
+        let controller = InAppModalViewController(
+            notification: notification,
+            delegate: self
+        )
+        window.addSubview(controller.view)
+        controller.view.pinToEdges(parentView: window)
+        inAppController = controller
+    }
+
+    public func consume(notification: ParcelvoyNotification) {
+        inAppController?.view.removeFromSuperview()
+        inAppController = nil
+
+        self.network?.put(path: "notifications/\(notification.id)", object: Alias(anonymousId: anonymousId, externalId: externalId))
+
+        self.showLatestNotification()
+    }
+
     /// Handle deeplink navigation
     ///
     /// To allow for click tracking, all emails are click-wrapped in a Parcelvoy url
@@ -211,7 +280,7 @@ public class Parcelvoy {
         /// Run the URL so that the redirect events get triggered at API
         var request = URLRequest(url: universalLink)
         request.httpMethod = "GET"
-        self.network?.request(request: request)
+        self.network?.process(request: request)
 
         /// Manually redirect to the URL included in the parameter
         open(url: redirectUrl)
@@ -287,5 +356,14 @@ public class Parcelvoy {
                 self?.postEvent(event, retries: (retries - 1))
             }
         }
+    }
+}
+
+extension Parcelvoy: InAppDelegate {
+    public func handle(action: InAppAction, context: [String : AnyObject], notification: ParcelvoyNotification) {
+        if action == .close {
+            self.consume(notification: notification)
+        }
+        self.inAppDelegate?.handle(action: action, context: context, notification: notification)
     }
 }
