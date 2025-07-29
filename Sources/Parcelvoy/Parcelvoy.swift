@@ -249,13 +249,21 @@ public class Parcelvoy {
     }
 
     private func open(url: URL) {
-        let userActivity =  NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
-        userActivity.webpageURL = url
-        let _ = UIApplication.shared.delegate?.application?(
-            UIApplication.shared,
-            continue: userActivity,
-            restorationHandler: { _ in }
-        )
+
+        let activity = NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
+        activity.webpageURL = url
+
+        if #available(iOS 13.0, *), UIApplication.shared.supportsMultipleScenes {
+            // SceneDelegate apps
+            UIApplication.shared.requestSceneSessionActivation(nil, userActivity: activity, options: nil, errorHandler: nil)
+        } else {
+            // AppDelegate-only apps
+            let _ = UIApplication.shared.delegate?.application?(
+                UIApplication.shared,
+                continue: activity,
+                restorationHandler: { _ in }
+            )
+        }
     }
 
     /// Reset session such that a new anonymous ID is generated
