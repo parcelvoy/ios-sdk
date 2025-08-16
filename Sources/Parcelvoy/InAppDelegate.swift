@@ -8,6 +8,7 @@ public protocol InAppDelegate: AnyObject {
     var autoShow: Bool { get }
     func onNew(notification: ParcelvoyNotification) -> InAppDisplayState
     func handle(action: InAppAction, context: [String: AnyObject], notification: ParcelvoyNotification)
+    func onError(error: Error)
 }
 
 extension InAppDelegate {
@@ -15,4 +16,5 @@ extension InAppDelegate {
     public func onNew(notification: ParcelvoyNotification) -> InAppDisplayState {
         return .show
     }
+    public func onError(error: Error) {}
 }

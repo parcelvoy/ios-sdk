@@ -213,7 +213,6 @@ public class Parcelvoy {
 
     public func showLatestNotification() {
         self.getNofications { result in
-            print(result)
             switch result {
             case .failure(let error): print(error)
             case .success(let notifications):
@@ -228,11 +227,6 @@ public class Parcelvoy {
     }
 
     public func show(notification: ParcelvoyNotification) {
-        // Find app delegate
-        // Get the window
-        // Show view on whatever the primary window is
-
-        // Store previous window
         let window = UIApplication
             .shared
             .connectedScenes
@@ -299,6 +293,15 @@ public class Parcelvoy {
     ///
     @discardableResult
     public func handle(_ application: UIApplication, userInfo: [AnyHashable: Any]) -> Bool {
+
+        /// Handle silent notifications that should only trigger in-app messages
+        if let silentNotification = userInfo["aps"] as? [String: AnyObject],
+           silentNotification["content-available"] as? Int == 1 {
+            self.showLatestNotification()
+            return true
+        }
+
+        /// Handle opening the app from tapping on a notification
         if let _ = userInfo["method"] as? String,
            let urlString = userInfo["url"] as? String,
            let url = URL(string: urlString) {
