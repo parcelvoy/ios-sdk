@@ -7,6 +7,8 @@ public struct Config {
     let inAppDelegate: InAppDelegate?
 }
 
+public class NetworkError: Error { }
+
 public struct Identity: Encodable {
     let anonymousId: String
     let externalId: String?

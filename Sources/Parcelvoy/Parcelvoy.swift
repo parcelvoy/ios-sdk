@@ -100,7 +100,10 @@ public class Parcelvoy {
     }
 
     private func boot() {
-        if inAppDelegate?.autoShow == true { self.showLatestNotification()
+        if inAppDelegate?.autoShow == true {
+            Task { @MainActor in
+                await self.showLatestNotification()
+            }
         }
     }
 
@@ -206,26 +209,27 @@ public class Parcelvoy {
     }
 
     public typealias Cursor = String
-    public func getNofications(handler: @escaping  (Result<Page<ParcelvoyNotification>, Error>) -> Void) {
+    public func getNofications() async throws -> Page<ParcelvoyNotification> {
         let user = Alias(anonymousId: self.anonymousId, externalId: self.externalId)
-        self.network?.get(path: "notifications", user: user, handler: handler)
+        guard let network = self.network else { throw NetworkError() }
+        return try await network.get(path: "notifications", user: user)
     }
 
-    public func showLatestNotification() {
-        self.getNofications { result in
-            switch result {
-            case .failure(let error): print(error)
-            case .success(let notifications):
-                guard let notification = notifications.results.first else {
-                    return
-                }
-                if let response = self.inAppDelegate?.onNew(notification: notification), response == .show {
-                    self.show(notification: notification)
-                }
+    public func showLatestNotification() async {
+        do {
+            let notifications = try await self.getNofications()
+            guard let notification = notifications.results.first else {
+                return
             }
+            if let response = self.inAppDelegate?.onNew(notification: notification), response == .show {
+                await self.show(notification: notification)
+            }
+        } catch {
+            self.inAppDelegate?.onError(error: error)
         }
     }
 
+    @MainActor
     public func show(notification: ParcelvoyNotification) {
         let window = UIApplication
             .shared
@@ -242,13 +246,18 @@ public class Parcelvoy {
         inAppController = controller
     }
 
-    public func consume(notification: ParcelvoyNotification) {
-        inAppController?.view.removeFromSuperview()
-        inAppController = nil
+    public func consume(notification: ParcelvoyNotification) async {
+        await MainActor.run {
+            inAppController?.view.removeFromSuperview()
+            inAppController = nil
+        }
 
-        self.network?.put(path: "notifications/\(notification.id)", object: Alias(anonymousId: anonymousId, externalId: externalId))
-
-        self.showLatestNotification()
+        do {
+            try await self.network?.put(path: "notifications/\(notification.id)", object: Alias(anonymousId: anonymousId, externalId: externalId))
+            await self.showLatestNotification()
+        } catch let error {
+            self.inAppDelegate?.onError(error: error)
+        }
     }
 
     /// Handle deeplink navigation
@@ -297,7 +306,9 @@ public class Parcelvoy {
         /// Handle silent notifications that should only trigger in-app messages
         if let silentNotification = userInfo["aps"] as? [String: AnyObject],
            silentNotification["content-available"] as? Int == 1 {
-            self.showLatestNotification()
+            Task { @MainActor in
+                await self.showLatestNotification()
+            }
             return true
         }
 
@@ -364,9 +375,11 @@ public class Parcelvoy {
 
 extension Parcelvoy: InAppDelegate {
     public func handle(action: InAppAction, context: [String : AnyObject], notification: ParcelvoyNotification) {
-        if action == .close {
-            self.consume(notification: notification)
+        Task { @MainActor in
+            if action == .close {
+                await self.consume(notification: notification)
+            }
+            self.inAppDelegate?.handle(action: action, context: context, notification: notification)
         }
-        self.inAppDelegate?.handle(action: action, context: context, notification: notification)
     }
 }

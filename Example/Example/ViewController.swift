@@ -26,15 +26,15 @@ class ViewController: UIViewController {
     }
 
     @IBAction func getNotifications() {
-        Parcelvoy.shared.getNofications { result in
-            print(result)
-            switch result {
-            case .failure(let error): print(error)
-            case .success(let notifications):
+        Task { @MainActor in
+            do {
+                let notifications = try await Parcelvoy.shared.getNofications()
                 guard let notification = notifications.results.first else {
                     return
                 }
                 Parcelvoy.shared.show(notification: notification)
+            } catch let error {
+                print(error)
             }
         }
     }
