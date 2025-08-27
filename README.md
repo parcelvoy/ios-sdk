@@ -68,9 +68,59 @@ func application(
 ) async -> UIBackgroundFetchResult {
     Parcelvoy.shared.handle(application, userInfo: userInfo)
     return .newData
-}
-                     
+}                     
 ```
+
+### In-App Notifications
+To allow for your app to receive custom UI in-app notifications you need to configure your app to properly parse and display them. This is handled by a custom delegate that you set when you initialize the SDK called `InAppDelegate`.
+```swift
+
+class CustomInAppDelegate: InAppDelegate {
+    func handle(action: InAppAction, context: [String : AnyObject], notification: ParcelvoyNotification) {
+        print("PV | Action: \(action) \(context)")
+    }
+}
+
+Parcelvoy.initialize(
+    apiKey: apiKey,
+    urlEndpoint: urlEndpoint,
+    inAppDelegate: CustomInAppDelegate(),
+    launchOptions: launchOptions
+)
+```
+
+This delegate contains three methods that you can configure to help you determine how and when notifications should display.
+```swift
+public protocol InAppDelegate: AnyObject {
+    var autoShow: Bool { get }
+    func onNew(notification: ParcelvoyNotification) -> InAppDisplayState
+    func handle(action: InAppAction, context: [String: Any], notification: ParcelvoyNotification)
+    func onError(error: Error)
+}
+```
+- `autoShow: boolean`: Should notifications automatically display upon receipt and app open
+- `onNew(notification: ParcelvoyNotification) -> InAppDisplayState`: When a notification is received (and `autoShow` is true), what should the SDK do? Options are:
+    - `show`: Display the notification to the user
+    - `skip`: Iterate to the next notification if there is one, otherwise do nothing. This does not mark the notification as read
+    - `consume`: Mark the notification as read and never show again
+- `handle(action: InAppAction, context: [String: Any], notification: ParcelvoyNotification)`: Triggered when an action is taken inside of a notification. Possible actions are:
+    - `close`: Triggered to dismiss and consume a displayed notification
+    - `custom`: Triggered with custom data for the app to utilize
+- `onError(error: Error)`: Provide errors if any have been encountered
+
+If you would like to manually handle showing notifications, this can be achieved by turning `autoShow` to false and then calling `Parcelvoy.shared.showLatestNotification()`
+
+#### Helper Methods
+- `getNofications() async throws -> Page<ParcelvoyNotification>`: Returns a page of notifications
+- `showLatestNotification() async`: Display the latest notification to the user
+- `show(notification: ParcelvoyNotification) async`: Display a provided notification to the user
+- `consume(notification: ParcelvoyNotification) async`: Mark a notification as being read
+- `dismiss(notification: ParcelvoyNotification) async`: Dismiss a notification if it is being displayed and mark it as being read
+
+#### Handling In-App Actions
+The SDK handles actions in a couple of different ways. At its simplest, to close a notification you can use the `parcelvoy://dismiss` deeplink.
+
+If you'd like to pass information from the in-app notification to the app (for example based on what button they click, etc) you can use the JS trigger `window.custom(obj)` or use any other deeplink using the `parcelvoy://` scheme such as `parcelvoy://special/custom`
 
 ### Deeplink & Universal Link Navigation
 To allow for click tracking links in emails can be click-wrapped in a Parcelvoy url that then needs to be unwrapped for navigation purposes. For information on setting this up on your platform, please see our [deeplink documentation](https://docs.parcelvoy.com/advanced/deeplinking).

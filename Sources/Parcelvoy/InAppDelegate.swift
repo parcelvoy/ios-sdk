@@ -1,13 +1,13 @@
 import Foundation
 
 public enum InAppDisplayState {
-    case show, skip
+    case show, skip, consume
 }
 
 public protocol InAppDelegate: AnyObject {
     var autoShow: Bool { get }
     func onNew(notification: ParcelvoyNotification) -> InAppDisplayState
-    func handle(action: InAppAction, context: [String: AnyObject], notification: ParcelvoyNotification)
+    func handle(action: InAppAction, context: [String: Any], notification: ParcelvoyNotification)
     func onError(error: Error)
 }
 

@@ -218,11 +218,17 @@ public class Parcelvoy {
     public func showLatestNotification() async {
         do {
             let notifications = try await self.getNofications()
-            guard let notification = notifications.results.first else {
-                return
-            }
-            if let response = self.inAppDelegate?.onNew(notification: notification), response == .show {
-                await self.show(notification: notification)
+
+            // Run through all notifications to check if they should
+            // be displayed or not
+            for notification in notifications.results {
+                if let response = self.inAppDelegate?.onNew(notification: notification) {
+                    switch response {
+                    case .show: await self.show(notification: notification)
+                    case .consume: await self.consume(notification: notification)
+                    case .skip: continue
+                    }
+                }
             }
         } catch {
             self.inAppDelegate?.onError(error: error)
@@ -230,7 +236,7 @@ public class Parcelvoy {
     }
 
     @MainActor
-    public func show(notification: ParcelvoyNotification) {
+    public func show(notification: ParcelvoyNotification) async {
         let window = UIApplication
             .shared
             .connectedScenes
@@ -244,20 +250,28 @@ public class Parcelvoy {
         window.addSubview(controller.view)
         controller.view.pinToEdges(parentView: window)
         inAppController = controller
+
+        if notification.content.readOnShow ?? false {
+            await self.consume(notification: notification)
+        }
     }
 
     public func consume(notification: ParcelvoyNotification) async {
-        await MainActor.run {
-            inAppController?.view.removeFromSuperview()
-            inAppController = nil
-        }
-
         do {
             try await self.network?.put(path: "notifications/\(notification.id)", object: Alias(anonymousId: anonymousId, externalId: externalId))
             await self.showLatestNotification()
         } catch let error {
             self.inAppDelegate?.onError(error: error)
         }
+    }
+
+    public func dismiss(notification: ParcelvoyNotification) async {
+        await MainActor.run {
+            inAppController?.view.removeFromSuperview()
+            inAppController = nil
+        }
+
+        await self.consume(notification: notification)
     }
 
     /// Handle deeplink navigation
@@ -377,7 +391,7 @@ extension Parcelvoy: InAppDelegate {
     public func handle(action: InAppAction, context: [String : AnyObject], notification: ParcelvoyNotification) {
         Task { @MainActor in
             if action == .close {
-                await self.consume(notification: notification)
+                await self.dismiss(notification: notification)
             }
             self.inAppDelegate?.handle(action: action, context: context, notification: notification)
         }

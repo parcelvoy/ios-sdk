@@ -108,27 +108,27 @@ public enum NotificationType: String, Decodable {
 public protocol NotificationContent {
     var title: String { get }
     var body: String  { get }
-//    var custom: [String: Any] { get }
+    var readOnShow: Bool? { get }
 }
 
 public struct BannerNotification: NotificationContent, Decodable {
     public let title: String
     public let body: String
-//    let custom: [String: Any]
+    public let readOnShow: Bool?
 }
 
 public struct AlertNotification: NotificationContent, Decodable {
     public let title: String
     public let body: String
-//    let custom: [String: Any]
     public let image: String?
+    public let readOnShow: Bool?
 }
 
 public struct HtmlNotification: NotificationContent, Decodable {
     public let title: String
     public let body: String
-//    let custom: [String: Any]
     public let html: String
+    public let readOnShow: Bool?
 }
 
 public struct ParcelvoyNotification: Decodable {

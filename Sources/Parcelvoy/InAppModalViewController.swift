@@ -2,7 +2,7 @@ import UIKit
 import WebKit
 
 public enum InAppAction: String, CaseIterable {
-    case close, custom
+    case dismiss, custom
 }
 
 class InAppModalViewController: UIViewController {
@@ -36,7 +36,7 @@ class InAppModalViewController: UIViewController {
             webView.configuration.userContentController.add(self, name: $0.rawValue)
         }
 
-        let closeScript = "window.close = function() { window.webkit.messageHandlers.close.postMessage(''); }"
+        let closeScript = "window.dismiss = function() { window.webkit.messageHandlers.dismiss.postMessage(''); }"
         let closeUserScript = WKUserScript(source: closeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         webView.configuration.userContentController.addUserScript(closeUserScript)
 
@@ -53,8 +53,7 @@ class InAppModalViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func processAction(action: String, body: [String: AnyObject] = [:]) {
-        guard let action = InAppAction(rawValue: action) else { return }
+    func processAction(action: InAppAction, body: [String: Any] = [:]) {
         self.delegate?.handle(action: action, context: body, notification: notification)
     }
 }
@@ -66,24 +65,37 @@ extension InAppModalViewController: WKNavigationDelegate, WKScriptMessageHandler
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
-        let url = navigationAction.request.url
-        if url?.absoluteString == "about:blank" {
+        guard let url = navigationAction.request.url else {
             return decisionHandler(.allow)
         }
-        if url?.absoluteString == "parcelvoy://close" {
+
+        // If matches local HTML loading, allow
+        if url.absoluteString == "about:blank" {
+            return decisionHandler(.allow)
+        }
+
+        // If matches `parcelvoy` deeplink path
+        if url.absoluteString.starts(with: "parcelvoy://") {
             decisionHandler(.cancel)
-            processAction(action: "close")
-            return
+
+            if url.absoluteString == "parcelvoy://dismiss" {
+                return processAction(action: .dismiss)
+            }
+
+            return processAction(action: .custom, body: [
+                "url": url.absoluteString
+            ])
         }
 
         // Disable all other page actions, pop open in a new browser
         decisionHandler(.cancel)
-        if let url = url, UIApplication.shared.canOpenURL(url) {
+        if UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url)
         }
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        processAction(action: message.name, body: message.body as? [String: AnyObject] ?? [:])
+        guard let action = InAppAction(rawValue: message.name) else { return }
+        processAction(action: action, body: message.body as? [String: Any] ?? [:])
     }
 }

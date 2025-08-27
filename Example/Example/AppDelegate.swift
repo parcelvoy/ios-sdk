@@ -12,8 +12,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
         // TODO: Enter API Key and URL
-        let apiKey = "pk_3f45d77c-4581-11ed-8b0b-0242ac110003"
-        let urlEndpoint = "https://f849598081b8.ngrok.app"
+        let apiKey = ""
+        let urlEndpoint = ""
 
         Parcelvoy.initialize(
             apiKey: apiKey,
