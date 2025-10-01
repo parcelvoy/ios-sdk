@@ -14,6 +14,7 @@ class InAppModalViewController: UIViewController {
     private var notification: ParcelvoyNotification!
     private var onLoad: ((UIViewController) -> Void)?
 
+    private let transitionDelegate = OverlayTransitioningDelegate()
     private var initialLoadNavigation: WKNavigation?
 
     init(notification: ParcelvoyNotification, delegate: InAppDelegate, onLoad: @escaping (UIViewController) -> Void) {
@@ -22,6 +23,10 @@ class InAppModalViewController: UIViewController {
         self.onLoad = onLoad
 
         super.init(nibName: nil, bundle: nil)
+
+        transitioningDelegate = transitionDelegate
+        modalPresentationStyle = .custom
+
         view.backgroundColor = .clear
 
         view.addSubview(webView)
@@ -111,5 +116,59 @@ extension InAppModalViewController: WKNavigationDelegate, WKScriptMessageHandler
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let action = InAppAction(rawValue: message.name) else { return }
         processAction(action: action, body: message.body as? [String: Any] ?? [:])
+    }
+}
+
+
+private class OverlayTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {
+    func presentationController(
+        forPresented presented: UIViewController,
+        presenting: UIViewController?,
+        source: UIViewController
+    ) -> UIPresentationController? {
+        OverlayPresentationController(presentedViewController: presented, presenting: presenting)
+    }
+}
+
+private class OverlayPresentationController: UIPresentationController {
+
+    private let dimmedBackgroundView = UIView()
+    private let alpha: CGFloat = 0.5
+
+    override func presentationTransitionWillBegin() {
+        guard let containerView else { return }
+        containerView.addSubview(self.dimmedBackgroundView)
+        dimmedBackgroundView.backgroundColor = .black
+        dimmedBackgroundView.frame = containerView.bounds
+        dimmedBackgroundView.alpha = 0
+
+        if let coordinator = presentedViewController.transitionCoordinator {
+            coordinator.animate(alongsideTransition: { _ in
+                self.dimmedBackgroundView.alpha = self.alpha
+            }, completion: nil)
+        } else {
+            dimmedBackgroundView.alpha = alpha
+        }
+    }
+
+    override func dismissalTransitionWillBegin() {
+        if let coordinator = presentedViewController.transitionCoordinator {
+            coordinator.animate(alongsideTransition: { _ in
+                self.dimmedBackgroundView.alpha = 0
+            }, completion: nil)
+        } else {
+            dimmedBackgroundView.alpha = 0
+        }
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        coordinator.animate { _ in
+            self.dimmedBackgroundView.frame = .init(origin: .zero, size: size)
+        }
+        super.viewWillTransition(to: size, with: coordinator)
+    }
+
+    override func dismissalTransitionDidEnd(_ completed: Bool) {
+        dimmedBackgroundView.removeFromSuperview()
     }
 }
