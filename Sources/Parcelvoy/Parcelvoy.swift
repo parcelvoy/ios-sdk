@@ -248,8 +248,9 @@ public class Parcelvoy {
         let inAppController = InAppModalViewController(
             notification: notification,
             delegate: self
-        )
-        viewController.present(inAppController, animated: true)
+        ) {
+            viewController.present($0, animated: true)
+        }
         self.inAppController = inAppController
 
         if notification.content.readOnShow ?? false {

@@ -7,14 +7,19 @@ public enum InAppAction: String, CaseIterable {
 
 class InAppModalViewController: UIViewController {
 
-    let webView = WKWebView()
-    let contentController = WKUserContentController()
-    var notification: ParcelvoyNotification!
     weak var delegate: InAppDelegate?
 
-    init(notification: ParcelvoyNotification, delegate: InAppDelegate) {
+    private let webView = WKWebView()
+    private let contentController = WKUserContentController()
+    private var notification: ParcelvoyNotification!
+    private var onLoad: ((UIViewController) -> Void)?
+
+    private var initialLoadNavigation: WKNavigation?
+
+    init(notification: ParcelvoyNotification, delegate: InAppDelegate, onLoad: @escaping (UIViewController) -> Void) {
         self.notification = notification
         self.delegate = delegate
+        self.onLoad = onLoad
 
         super.init(nibName: nil, bundle: nil)
         view.backgroundColor = .clear
@@ -45,7 +50,7 @@ class InAppModalViewController: UIViewController {
         webView.configuration.userContentController.addUserScript(customUserScript)
 
         if let notification = notification.content as? HtmlNotification {
-            self.webView.loadHTMLString(notification.html, baseURL: nil)
+            initialLoadNavigation = webView.loadHTMLString(notification.html, baseURL: nil)
         }
     }
     
@@ -54,7 +59,7 @@ class InAppModalViewController: UIViewController {
     }
 
     func processAction(action: InAppAction, body: [String: Any] = [:]) {
-        self.delegate?.handle(action: action, context: body, notification: notification)
+        delegate?.handle(action: action, context: body, notification: notification)
     }
 }
 
@@ -62,6 +67,15 @@ extension InAppModalViewController: WKNavigationDelegate, WKScriptMessageHandler
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         self.delegate?.onError(error: error)
+        delegate?.onError(error: error)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard let navigation, navigation === initialLoadNavigation else { return }
+        if let onLoad {
+            onLoad(self)
+            self.onLoad = nil
+        }
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
