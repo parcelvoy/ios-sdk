@@ -69,6 +69,8 @@ class InAppModalViewController: UIViewController {
 }
 
 extension InAppModalViewController: WKNavigationDelegate, WKScriptMessageHandler {
+    private static var addDarkMode: String = "document.documentElement.classList.add('darkMode');"
+    private static var removeDarkMode: String = "document.documentElement.classList.remove('darkMode');"
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         self.delegate?.onError(error: error)
@@ -77,6 +79,11 @@ extension InAppModalViewController: WKNavigationDelegate, WKScriptMessageHandler
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard let navigation, navigation === initialLoadNavigation else { return }
+        if delegate?.useDarkMode == true {
+            webView.evaluateJavaScript(Self.addDarkMode)
+        } else {
+            webView.evaluateJavaScript(Self.removeDarkMode)
+        }
         if let onLoad {
             onLoad(self)
             self.onLoad = nil

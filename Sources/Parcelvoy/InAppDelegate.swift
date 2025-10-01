@@ -6,6 +6,7 @@ public enum InAppDisplayState {
 
 public protocol InAppDelegate: AnyObject {
     var autoShow: Bool { get }
+    var useDarkMode: Bool { get }
     func onNew(notification: ParcelvoyNotification) -> InAppDisplayState
     func handle(action: InAppAction, context: [String: Any], notification: ParcelvoyNotification)
     func onError(error: Error)
@@ -13,8 +14,7 @@ public protocol InAppDelegate: AnyObject {
 
 extension InAppDelegate {
     public var autoShow: Bool { true }
-    public func onNew(notification: ParcelvoyNotification) -> InAppDisplayState {
-        return .show
-    }
+    public var useDarkMode: Bool { false }
+    public func onNew(notification: ParcelvoyNotification) -> InAppDisplayState { .show }
     public func onError(error: Error) {}
 }

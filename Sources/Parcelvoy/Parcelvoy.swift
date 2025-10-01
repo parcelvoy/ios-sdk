@@ -390,6 +390,8 @@ public class Parcelvoy {
 }
 
 extension Parcelvoy: InAppDelegate {
+    public var useDarkMode: Bool { inAppDelegate?.useDarkMode ?? false }
+
     public func handle(action: InAppAction, context: [String : Any], notification: ParcelvoyNotification) {
         Task { @MainActor in
             if action == .dismiss {
