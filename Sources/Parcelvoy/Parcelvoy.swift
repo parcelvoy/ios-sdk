@@ -237,19 +237,20 @@ public class Parcelvoy {
 
     @MainActor
     public func show(notification: ParcelvoyNotification) async {
-        let window = UIApplication
+        let viewController = UIApplication
             .shared
             .connectedScenes
-            .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
-            .last { $0.isKeyWindow }
-        guard let window = window else { return }
-        let controller = InAppModalViewController(
+            .compactMap {$0 as? UIWindowScene}
+            .flatMap { $0.windows }
+            .last { $0.isKeyWindow }?
+            .rootViewController
+        guard let viewController else { return }
+        let inAppController = InAppModalViewController(
             notification: notification,
             delegate: self
         )
-        window.addSubview(controller.view)
-        controller.view.pinToEdges(parentView: window)
-        inAppController = controller
+        viewController.present(inAppController, animated: true)
+        self.inAppController = inAppController
 
         if notification.content.readOnShow ?? false {
             await self.consume(notification: notification)
@@ -267,7 +268,7 @@ public class Parcelvoy {
 
     public func dismiss(notification: ParcelvoyNotification) async {
         await MainActor.run {
-            inAppController?.view.removeFromSuperview()
+            inAppController?.dismiss(animated: true)
             inAppController = nil
         }
 
