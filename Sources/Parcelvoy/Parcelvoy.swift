@@ -388,9 +388,9 @@ public class Parcelvoy {
 }
 
 extension Parcelvoy: InAppDelegate {
-    public func handle(action: InAppAction, context: [String : AnyObject], notification: ParcelvoyNotification) {
+    public func handle(action: InAppAction, context: [String : Any], notification: ParcelvoyNotification) {
         Task { @MainActor in
-            if action == .close {
+            if action == .dismiss {
                 await self.dismiss(notification: notification)
             }
             self.inAppDelegate?.handle(action: action, context: context, notification: notification)
