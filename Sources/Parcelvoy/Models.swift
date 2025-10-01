@@ -132,9 +132,9 @@ public struct HtmlNotification: NotificationContent, Decodable {
 }
 
 public struct ParcelvoyNotification: Decodable {
-    let id: Int
-    let contentType: NotificationType
-    let content: NotificationContent
+    public let id: Int
+    public let contentType: NotificationType
+    public let content: NotificationContent
     let readAt: Date?
     let expiresAt: Date?
 
