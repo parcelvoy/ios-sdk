@@ -5,9 +5,15 @@ public enum InAppAction: String, CaseIterable {
     case dismiss, custom
 }
 
+protocol InAppModelViewControllerDelegate: AnyObject {
+    var useDarkMode: Bool { get }
+    func handle(action: InAppAction, context: [String: Any], notification: ParcelvoyNotification)
+    func onError(error: Error)
+}
+
 class InAppModalViewController: UIViewController {
 
-    weak var delegate: InAppDelegate?
+    weak var delegate: InAppModelViewControllerDelegate?
 
     private let webView = WKWebView()
     private let contentController = WKUserContentController()
@@ -17,7 +23,11 @@ class InAppModalViewController: UIViewController {
     private let transitionDelegate = OverlayTransitioningDelegate()
     private var initialLoadNavigation: WKNavigation?
 
-    init(notification: ParcelvoyNotification, delegate: InAppDelegate, onLoad: @escaping (UIViewController) -> Void) {
+    init(
+        notification: ParcelvoyNotification,
+        delegate: InAppModelViewControllerDelegate,
+        onLoad: @escaping (UIViewController) -> Void
+    ) {
         self.notification = notification
         self.delegate = delegate
         self.onLoad = onLoad

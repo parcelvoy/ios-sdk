@@ -389,15 +389,19 @@ public class Parcelvoy {
     }
 }
 
-extension Parcelvoy: InAppDelegate {
-    public var useDarkMode: Bool { inAppDelegate?.useDarkMode ?? false }
+extension Parcelvoy: InAppModelViewControllerDelegate {
+    var useDarkMode: Bool { inAppDelegate?.useDarkMode ?? false }
 
-    public func handle(action: InAppAction, context: [String : Any], notification: ParcelvoyNotification) {
+    func handle(action: InAppAction, context: [String : Any], notification: ParcelvoyNotification) {
         Task { @MainActor in
             if action == .dismiss {
                 await self.dismiss(notification: notification)
             }
             self.inAppDelegate?.handle(action: action, context: context, notification: notification)
         }
+    }
+
+    func onError(error: any Error) {
+        inAppDelegate?.onError(error: error)
     }
 }
