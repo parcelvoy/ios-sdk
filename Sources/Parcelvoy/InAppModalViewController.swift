@@ -73,7 +73,6 @@ extension InAppModalViewController: WKNavigationDelegate, WKScriptMessageHandler
     private static var removeDarkMode: String = "document.documentElement.classList.remove('darkMode');"
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        self.delegate?.onError(error: error)
         delegate?.onError(error: error)
     }
 
