@@ -109,12 +109,14 @@ public protocol NotificationContent {
     var title: String { get }
     var body: String  { get }
     var readOnShow: Bool? { get }
+    var custom: [String: String]? { get }
 }
 
 public struct BannerNotification: NotificationContent, Decodable {
     public let title: String
     public let body: String
     public let readOnShow: Bool?
+    public let custom: [String: String]?
 }
 
 public struct AlertNotification: NotificationContent, Decodable {
@@ -122,6 +124,7 @@ public struct AlertNotification: NotificationContent, Decodable {
     public let body: String
     public let image: String?
     public let readOnShow: Bool?
+    public let custom: [String: String]?
 }
 
 public struct HtmlNotification: NotificationContent, Decodable {
@@ -129,6 +132,7 @@ public struct HtmlNotification: NotificationContent, Decodable {
     public let body: String
     public let html: String
     public let readOnShow: Bool?
+    public let custom: [String: String]?
 }
 
 public struct ParcelvoyNotification: Decodable {
