@@ -392,6 +392,10 @@ public class Parcelvoy {
 extension Parcelvoy: InAppModelViewControllerDelegate {
     var useDarkMode: Bool { inAppDelegate?.useDarkMode ?? false }
 
+    func didDisplay(notification: ParcelvoyNotification) {
+        inAppDelegate?.didDisplay(notification: notification)
+    }
+
     func handle(action: InAppAction, context: [String : Any], notification: ParcelvoyNotification) {
         Task { @MainActor in
             if action == .dismiss {

@@ -7,6 +7,7 @@ public enum InAppAction: String, CaseIterable {
 
 protocol InAppModelViewControllerDelegate: AnyObject {
     var useDarkMode: Bool { get }
+    func didDisplay(notification: ParcelvoyNotification)
     func handle(action: InAppAction, context: [String: Any], notification: ParcelvoyNotification)
     func onError(error: Error)
 }
@@ -68,7 +69,12 @@ class InAppModalViewController: UIViewController {
             initialLoadNavigation = webView.loadHTMLString(notification.html, baseURL: nil)
         }
     }
-    
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        delegate?.didDisplay(notification: notification)
+    }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
