@@ -244,7 +244,7 @@ public class Parcelvoy {
             .flatMap { $0.windows }
             .last { $0.isKeyWindow }?
             .rootViewController
-        guard let viewController else { return }
+        guard let viewController, viewController.presentedViewController == nil, inAppController == nil else { return }
         let inAppController = InAppModalViewController(
             notification: notification,
             delegate: self
@@ -261,7 +261,6 @@ public class Parcelvoy {
     public func consume(notification: ParcelvoyNotification) async {
         do {
             try await self.network?.put(path: "notifications/\(notification.id)", object: Alias(anonymousId: anonymousId, externalId: externalId))
-            await self.showLatestNotification()
         } catch let error {
             self.inAppDelegate?.onError(error: error)
         }
