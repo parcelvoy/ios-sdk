@@ -248,9 +248,8 @@ public class Parcelvoy {
         let inAppController = InAppModalViewController(
             notification: notification,
             delegate: self
-        ) {
-            viewController.present($0, animated: true)
-        }
+        )
+        viewController.present(inAppController, animated: false)
         self.inAppController = inAppController
 
         if notification.content.readOnShow ?? false {
@@ -268,7 +267,7 @@ public class Parcelvoy {
 
     public func dismiss(notification: ParcelvoyNotification) async {
         await MainActor.run {
-            inAppController?.dismiss(animated: true)
+            inAppController?.dismiss(animated: false)
             inAppController = nil
         }
 
