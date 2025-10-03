@@ -22,10 +22,11 @@ class InAppModalViewController: UIViewController {
 
     private var initialLoadNavigation: WKNavigation?
 
-    init(
+    init?(
         notification: ParcelvoyNotification,
         delegate: InAppModelViewControllerDelegate,
     ) {
+        guard let content = notification.content as? HtmlNotification else { return nil }
         self.notification = notification
         self.delegate = delegate
 
@@ -60,9 +61,7 @@ class InAppModalViewController: UIViewController {
         let customUserScript = WKUserScript(source: customSource, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         webView.configuration.userContentController.addUserScript(customUserScript)
 
-        if let notification = notification.content as? HtmlNotification {
-            initialLoadNavigation = webView.loadHTMLString(notification.html, baseURL: nil)
-        }
+        initialLoadNavigation = webView.loadHTMLString(content.html, baseURL: nil)
     }
 
     override func viewDidAppear(_ animated: Bool) {

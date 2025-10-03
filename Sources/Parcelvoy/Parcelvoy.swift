@@ -244,11 +244,11 @@ public class Parcelvoy {
             .flatMap { $0.windows }
             .last { $0.isKeyWindow }?
             .rootViewController
-        guard let viewController, viewController.presentedViewController == nil, inAppController == nil else { return }
-        let inAppController = InAppModalViewController(
-            notification: notification,
-            delegate: self
-        )
+        guard let viewController,
+                  viewController.presentedViewController == nil,
+                  inAppController == nil,
+                  let inAppController = InAppModalViewController(notification: notification, delegate: self) else { return }
+
         viewController.present(inAppController, animated: false)
         self.inAppController = inAppController
 
