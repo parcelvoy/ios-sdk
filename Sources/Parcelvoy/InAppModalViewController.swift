@@ -5,18 +5,35 @@ public enum InAppAction: String, CaseIterable {
     case dismiss, custom
 }
 
+protocol InAppModelViewControllerDelegate: AnyObject {
+    var useDarkMode: Bool { get }
+    func didDisplay(notification: ParcelvoyNotification)
+    func handle(action: InAppAction, context: [String: Any], notification: ParcelvoyNotification)
+    func onError(error: Error)
+}
+
 class InAppModalViewController: UIViewController {
 
-    let webView = WKWebView()
-    let contentController = WKUserContentController()
-    var notification: ParcelvoyNotification!
-    weak var delegate: InAppDelegate?
+    weak var delegate: InAppModelViewControllerDelegate?
 
-    init(notification: ParcelvoyNotification, delegate: InAppDelegate) {
+    private let webView = WKWebView()
+    private let contentController = WKUserContentController()
+    private var notification: ParcelvoyNotification!
+
+    private var initialLoadNavigation: WKNavigation?
+
+    init?(
+        notification: ParcelvoyNotification,
+        delegate: InAppModelViewControllerDelegate,
+    ) {
+        guard let content = notification.content as? HtmlNotification else { return nil }
         self.notification = notification
         self.delegate = delegate
 
         super.init(nibName: nil, bundle: nil)
+
+        modalPresentationStyle = .overFullScreen
+
         view.backgroundColor = .clear
 
         view.addSubview(webView)
@@ -44,24 +61,38 @@ class InAppModalViewController: UIViewController {
         let customUserScript = WKUserScript(source: customSource, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         webView.configuration.userContentController.addUserScript(customUserScript)
 
-        if let notification = notification.content as? HtmlNotification {
-            self.webView.loadHTMLString(notification.html, baseURL: nil)
-        }
+        initialLoadNavigation = webView.loadHTMLString(content.html, baseURL: nil)
     }
-    
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        delegate?.didDisplay(notification: notification)
+    }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     func processAction(action: InAppAction, body: [String: Any] = [:]) {
-        self.delegate?.handle(action: action, context: body, notification: notification)
+        delegate?.handle(action: action, context: body, notification: notification)
     }
 }
 
 extension InAppModalViewController: WKNavigationDelegate, WKScriptMessageHandler {
+    private static var addDarkMode: String = "document.documentElement.classList.add('darkMode');"
+    private static var removeDarkMode: String = "document.documentElement.classList.remove('darkMode');"
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        self.delegate?.onError(error: error)
+        delegate?.onError(error: error)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard let navigation, navigation === initialLoadNavigation else { return }
+        if delegate?.useDarkMode == true {
+            webView.evaluateJavaScript(Self.addDarkMode)
+        } else {
+            webView.evaluateJavaScript(Self.removeDarkMode)
+        }
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {

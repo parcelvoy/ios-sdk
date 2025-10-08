@@ -237,19 +237,20 @@ public class Parcelvoy {
 
     @MainActor
     public func show(notification: ParcelvoyNotification) async {
-        let window = UIApplication
+        let viewController = UIApplication
             .shared
             .connectedScenes
-            .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
-            .last { $0.isKeyWindow }
-        guard let window = window else { return }
-        let controller = InAppModalViewController(
-            notification: notification,
-            delegate: self
-        )
-        window.addSubview(controller.view)
-        controller.view.pinToEdges(parentView: window)
-        inAppController = controller
+            .compactMap {$0 as? UIWindowScene}
+            .flatMap { $0.windows }
+            .last { $0.isKeyWindow }?
+            .rootViewController
+        guard let viewController,
+                  viewController.presentedViewController == nil,
+                  inAppController == nil,
+                  let inAppController = InAppModalViewController(notification: notification, delegate: self) else { return }
+
+        viewController.present(inAppController, animated: false)
+        self.inAppController = inAppController
 
         if notification.content.readOnShow ?? false {
             await self.consume(notification: notification)
@@ -259,7 +260,6 @@ public class Parcelvoy {
     public func consume(notification: ParcelvoyNotification) async {
         do {
             try await self.network?.put(path: "notifications/\(notification.id)", object: Alias(anonymousId: anonymousId, externalId: externalId))
-            await self.showLatestNotification()
         } catch let error {
             self.inAppDelegate?.onError(error: error)
         }
@@ -267,7 +267,7 @@ public class Parcelvoy {
 
     public func dismiss(notification: ParcelvoyNotification) async {
         await MainActor.run {
-            inAppController?.view.removeFromSuperview()
+            inAppController?.dismiss(animated: false)
             inAppController = nil
         }
 
@@ -387,13 +387,23 @@ public class Parcelvoy {
     }
 }
 
-extension Parcelvoy: InAppDelegate {
-    public func handle(action: InAppAction, context: [String : AnyObject], notification: ParcelvoyNotification) {
+extension Parcelvoy: InAppModelViewControllerDelegate {
+    var useDarkMode: Bool { inAppDelegate?.useDarkMode ?? false }
+
+    func didDisplay(notification: ParcelvoyNotification) {
+        inAppDelegate?.didDisplay(notification: notification)
+    }
+
+    func handle(action: InAppAction, context: [String : Any], notification: ParcelvoyNotification) {
         Task { @MainActor in
-            if action == .close {
+            if action == .dismiss {
                 await self.dismiss(notification: notification)
             }
             self.inAppDelegate?.handle(action: action, context: context, notification: notification)
         }
+    }
+
+    func onError(error: any Error) {
+        inAppDelegate?.onError(error: error)
     }
 }
