@@ -41,6 +41,11 @@ public class Parcelvoy {
     private var network: NetworkManager?
     private var store = UserDefaults(suiteName: "Parcelvoy")
 
+    private var inAppDelegate: InAppDelegate? {
+        get { config?.inAppDelegate }
+    }
+    private var inAppController: UIViewController?
+
     public init() {
         self.deviceId = UUID().uuidString
         self.externalId = self.store?.string(forKey: StoreKey.externalId.rawValue)
@@ -64,18 +69,24 @@ public class Parcelvoy {
     public static func initialize(
         apiKey: String,
         urlEndpoint: String,
+        inAppDelegate: InAppDelegate? = nil,
         launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Parcelvoy {
-        return Self.shared.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint, launchOptions: launchOptions)
+        return Self.shared.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint, inAppDelegate: inAppDelegate, launchOptions: launchOptions)
     }
 
     @discardableResult
     public func initialize(
         apiKey: String,
         urlEndpoint: String,
+        inAppDelegate: InAppDelegate? = nil,
         launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Parcelvoy {
-        return self.initialize(config: Config(apiKey: apiKey, urlEndpoint: urlEndpoint), launchOptions: launchOptions)
+        return self.initialize(config: Config(
+            apiKey: apiKey,
+            urlEndpoint: urlEndpoint,
+            inAppDelegate: inAppDelegate
+        ), launchOptions: launchOptions)
     }
 
     @discardableResult
@@ -84,7 +95,16 @@ public class Parcelvoy {
         launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Parcelvoy {
         self.config = config
+        self.boot()
         return self
+    }
+
+    private func boot() {
+        if inAppDelegate?.autoShow == true {
+            Task { @MainActor in
+                await self.showLatestNotification()
+            }
+        }
     }
 
     /// Identify a given user
@@ -188,6 +208,72 @@ public class Parcelvoy {
         self.network?.post(path: "devices", object: device)
     }
 
+    public typealias Cursor = String
+    public func getNofications() async throws -> Page<ParcelvoyNotification> {
+        let user = Alias(anonymousId: self.anonymousId, externalId: self.externalId)
+        guard let network = self.network else { throw NetworkError() }
+        return try await network.get(path: "notifications", user: user)
+    }
+
+    public func showLatestNotification() async {
+        do {
+            let notifications = try await self.getNofications()
+
+            // Run through all notifications to check if they should
+            // be displayed or not
+            for notification in notifications.results {
+                if let response = self.inAppDelegate?.onNew(notification: notification) {
+                    switch response {
+                    case .show: await self.show(notification: notification)
+                    case .consume: await self.consume(notification: notification)
+                    case .skip: continue
+                    }
+                }
+            }
+        } catch {
+            self.inAppDelegate?.onError(error: error)
+        }
+    }
+
+    @MainActor
+    public func show(notification: ParcelvoyNotification) async {
+        let viewController = UIApplication
+            .shared
+            .connectedScenes
+            .compactMap {$0 as? UIWindowScene}
+            .flatMap { $0.windows }
+            .last { $0.isKeyWindow }?
+            .rootViewController
+        guard let viewController,
+                  viewController.presentedViewController == nil,
+                  inAppController == nil,
+                  let inAppController = InAppModalViewController(notification: notification, delegate: self) else { return }
+
+        viewController.present(inAppController, animated: false)
+        self.inAppController = inAppController
+
+        if notification.content.readOnShow ?? false {
+            await self.consume(notification: notification)
+        }
+    }
+
+    public func consume(notification: ParcelvoyNotification) async {
+        do {
+            try await self.network?.put(path: "notifications/\(notification.id)", object: Alias(anonymousId: anonymousId, externalId: externalId))
+        } catch let error {
+            self.inAppDelegate?.onError(error: error)
+        }
+    }
+
+    public func dismiss(notification: ParcelvoyNotification) async {
+        await MainActor.run {
+            inAppController?.dismiss(animated: false)
+            inAppController = nil
+        }
+
+        await self.consume(notification: notification)
+    }
+
     /// Handle deeplink navigation
     ///
     /// To allow for click tracking, all emails are click-wrapped in a Parcelvoy url
@@ -211,7 +297,7 @@ public class Parcelvoy {
         /// Run the URL so that the redirect events get triggered at API
         var request = URLRequest(url: universalLink)
         request.httpMethod = "GET"
-        self.network?.request(request: request)
+        self.network?.process(request: request)
 
         /// Manually redirect to the URL included in the parameter
         open(url: redirectUrl)
@@ -230,6 +316,17 @@ public class Parcelvoy {
     ///
     @discardableResult
     public func handle(_ application: UIApplication, userInfo: [AnyHashable: Any]) -> Bool {
+
+        /// Handle silent notifications that should only trigger in-app messages
+        if let silentNotification = userInfo["aps"] as? [String: AnyObject],
+           silentNotification["content-available"] as? Int == 1 {
+            Task { @MainActor in
+                await self.showLatestNotification()
+            }
+            return true
+        }
+
+        /// Handle opening the app from tapping on a notification
         if let _ = userInfo["method"] as? String,
            let urlString = userInfo["url"] as? String,
            let url = URL(string: urlString) {
@@ -287,5 +384,26 @@ public class Parcelvoy {
                 self?.postEvent(event, retries: (retries - 1))
             }
         }
+    }
+}
+
+extension Parcelvoy: InAppModelViewControllerDelegate {
+    var useDarkMode: Bool { inAppDelegate?.useDarkMode ?? false }
+
+    func didDisplay(notification: ParcelvoyNotification) {
+        inAppDelegate?.didDisplay(notification: notification)
+    }
+
+    func handle(action: InAppAction, context: [String : Any], notification: ParcelvoyNotification) {
+        Task { @MainActor in
+            if action == .dismiss {
+                await self.dismiss(notification: notification)
+            }
+            self.inAppDelegate?.handle(action: action, context: context, notification: notification)
+        }
+    }
+
+    func onError(error: any Error) {
+        inAppDelegate?.onError(error: error)
     }
 }

@@ -6,7 +6,8 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        Parcelvoy.shared.identify(id: UUID().uuidString, traits: [
+        let id = UUID().uuidString
+        Parcelvoy.shared.identify(id: id, traits: [
             "first_name": "John",
             "last_name": "Doe"
         ])
@@ -21,6 +22,12 @@ class ViewController: UIViewController {
             DispatchQueue.main.async {
                 if granted { UIApplication.shared.registerForRemoteNotifications() }
             }
+        }
+    }
+
+    @IBAction func getNotifications() {
+        Task { @MainActor in
+            await Parcelvoy.shared.showLatestNotification()
         }
     }
 }

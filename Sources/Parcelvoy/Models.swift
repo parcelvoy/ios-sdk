@@ -4,7 +4,10 @@ import UIKit
 public struct Config {
     let apiKey: String
     let urlEndpoint: String
+    let inAppDelegate: InAppDelegate?
 }
+
+public class NetworkError: Error { }
 
 public struct Identity: Encodable {
     let anonymousId: String
@@ -89,4 +92,77 @@ struct Device: Codable {
     static let appBuild: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String
 
     static let appVersion: String = Bundle.main.infoDictionary?["CFBundleVersion"] as! String
+}
+
+public struct Page<T: Decodable>: Decodable {
+    public let results: [T]
+    let nextCursor: String?
+}
+
+public enum NotificationType: String, Decodable {
+    case banner
+    case alert
+    case html
+}
+
+public protocol NotificationContent {
+    var title: String { get }
+    var body: String  { get }
+    var readOnShow: Bool? { get }
+    var custom: [String: String]? { get }
+}
+
+public struct BannerNotification: NotificationContent, Decodable {
+    public let title: String
+    public let body: String
+    public let readOnShow: Bool?
+    public let custom: [String: String]?
+}
+
+public struct AlertNotification: NotificationContent, Decodable {
+    public let title: String
+    public let body: String
+    public let image: String?
+    public let readOnShow: Bool?
+    public let custom: [String: String]?
+}
+
+public struct HtmlNotification: NotificationContent, Decodable {
+    public let title: String
+    public let body: String
+    public let html: String
+    public let readOnShow: Bool?
+    public let custom: [String: String]?
+}
+
+public struct ParcelvoyNotification: Decodable {
+    public let id: Int
+    public let contentType: NotificationType
+    public let content: NotificationContent
+    let readAt: Date?
+    let expiresAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case contentType
+        case content
+        case readAt
+        case expiresAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        contentType = try container.decode(NotificationType.self, forKey: .contentType)
+        switch contentType {
+        case .banner:
+            content = try container.decode(BannerNotification.self, forKey: .content)
+        case .alert:
+            content = try container.decode(AlertNotification.self, forKey: .content)
+        case .html:
+            content = try container.decode(HtmlNotification.self, forKey: .content)
+        }
+        readAt = try container.decodeIfPresent(Date.self, forKey: .readAt)
+        expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
+    }
 }

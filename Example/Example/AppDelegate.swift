@@ -1,6 +1,12 @@
 import UIKit
 import Parcelvoy
 
+class CustomInAppDelegate: InAppDelegate {
+    func handle(action: InAppAction, context: [String : AnyObject], notification: ParcelvoyNotification) {
+        print("PV | Action: \(action) \(context)")
+    }
+}
+
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -9,7 +15,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let apiKey = ""
         let urlEndpoint = ""
 
-        Parcelvoy.initialize(apiKey: apiKey, urlEndpoint: urlEndpoint, launchOptions: launchOptions)
+        Parcelvoy.initialize(
+            apiKey: apiKey,
+            urlEndpoint: urlEndpoint,
+            inAppDelegate: CustomInAppDelegate(),
+            launchOptions: launchOptions
+        )
 
         // Override point for customization after application launch.
         return true
