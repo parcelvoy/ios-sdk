@@ -133,6 +133,28 @@ public struct HtmlNotification: NotificationContent, Decodable {
     public let html: String
     public let readOnShow: Bool?
     public let custom: [String: String]?
+
+    enum CodingKeys: CodingKey {
+        case title
+        case body
+        case html
+        case readOnShow
+        case custom
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.body = try container.decode(String.self, forKey: .body)
+        self.html = try container.decode(String.self, forKey: .html)
+        self.readOnShow = try container.decodeIfPresent(Bool.self, forKey: .readOnShow)
+
+        let customProperties = try container.decodeIfPresent([String: Any].self, forKey: .custom)
+        let custom = customProperties?.reduce(into: [String: String]()) { dict, tuple in
+            dict[tuple.key] = "\(tuple.value)"
+        }
+        self.custom = custom?.isEmpty == false ? custom : nil
+    }
 }
 
 public struct ParcelvoyNotification: Decodable {
