@@ -110,6 +110,7 @@ public protocol NotificationContent {
     var body: String  { get }
     var readOnShow: Bool? { get }
     var custom: [String: String]? { get }
+    var context: [String: String]? { get }
 }
 
 public struct BannerNotification: NotificationContent, Decodable {
@@ -117,6 +118,7 @@ public struct BannerNotification: NotificationContent, Decodable {
     public let body: String
     public let readOnShow: Bool?
     public let custom: [String: String]?
+    public let context: [String: String]?
 }
 
 public struct AlertNotification: NotificationContent, Decodable {
@@ -125,6 +127,7 @@ public struct AlertNotification: NotificationContent, Decodable {
     public let image: String?
     public let readOnShow: Bool?
     public let custom: [String: String]?
+    public let context: [String: String]?
 }
 
 public struct HtmlNotification: NotificationContent, Decodable {
@@ -133,6 +136,37 @@ public struct HtmlNotification: NotificationContent, Decodable {
     public let html: String
     public let readOnShow: Bool?
     public let custom: [String: String]?
+    public let context: [String: String]?
+
+    enum CodingKeys: CodingKey {
+        case title
+        case body
+        case html
+        case readOnShow
+        case custom
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.body = try container.decode(String.self, forKey: .body)
+        self.html = try container.decode(String.self, forKey: .html)
+        self.readOnShow = try container.decodeIfPresent(Bool.self, forKey: .readOnShow)
+
+        let customProperties = try container.decodeIfPresent([String: Any].self, forKey: .custom)
+        let contextProperties = customProperties?["context"] as? [String: Any]
+
+        let context = contextProperties?.reduce(into: [String: String]()) { dict, tuple in
+            dict[tuple.key] = "\(tuple.value)"
+        }
+        self.context = context?.isEmpty == false ? context : nil
+
+        let custom = customProperties?.reduce(into: [String: String]()) { dict, tuple in
+            guard tuple.key != "context" else { return }
+            dict[tuple.key] = "\(tuple.value)"
+        }
+        self.custom = custom?.isEmpty == false ? custom : nil
+    }
 }
 
 public struct ParcelvoyNotification: Decodable {
