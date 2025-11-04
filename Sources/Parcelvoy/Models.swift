@@ -89,9 +89,9 @@ struct Device: Codable {
         return identifier
     }()
 
-    static let appBuild: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String
+    static let appVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as! String
 
-    static let appVersion: String = Bundle.main.infoDictionary?["CFBundleVersion"] as! String
+    static let appBuild: String = Bundle.main.infoDictionary?["CFBundleVersion"] as! String
 }
 
 public struct Page<T: Decodable>: Decodable {
