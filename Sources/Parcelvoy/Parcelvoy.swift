@@ -11,7 +11,7 @@ public class Parcelvoy {
 
     public static let shared = Parcelvoy()
 
-    private var externalId: String? {
+    public var externalId: String? {
         didSet {
             if externalId != nil {
                 self.store?.set(externalId, forKey: StoreKey.externalId.rawValue)
@@ -20,7 +20,7 @@ public class Parcelvoy {
             }
         }
     }
-    private(set) var anonymousId: String {
+    public var anonymousId: String {
         didSet {
             self.store?.set(anonymousId, forKey: StoreKey.anonymousId.rawValue)
         }
