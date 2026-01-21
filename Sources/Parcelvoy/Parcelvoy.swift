@@ -317,6 +317,10 @@ public class Parcelvoy {
     @discardableResult
     public func handle(userInfo: [AnyHashable: Any]) -> Bool {
 
+        if userInfo["parcelvoy"] == nil {
+            return false
+        }
+
         /// Handle silent notifications that should only trigger in-app messages
         if let silentNotification = userInfo["aps"] as? [String: AnyObject],
            silentNotification["content-available"] as? Int == 1 {
