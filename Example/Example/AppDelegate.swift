@@ -46,7 +46,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any]) async -> UIBackgroundFetchResult {
-        Parcelvoy.shared.handle(application, userInfo: userInfo)
+        Parcelvoy.shared.handle(userInfo: userInfo)
         return .newData
     }
 

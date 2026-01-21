@@ -315,7 +315,7 @@ public class Parcelvoy {
     ///     - userInfo: The dictionary of attributes included in the notification
     ///
     @discardableResult
-    public func handle(_ application: UIApplication, userInfo: [AnyHashable: Any]) -> Bool {
+    public func handle(userInfo: [AnyHashable: Any]) -> Bool {
 
         /// Handle silent notifications that should only trigger in-app messages
         if let silentNotification = userInfo["aps"] as? [String: AnyObject],
