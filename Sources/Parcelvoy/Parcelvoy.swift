@@ -222,7 +222,7 @@ public class Parcelvoy {
             // Run through all notifications to check if they should
             // be displayed or not
             for notification in notifications.results {
-                if let response = self.inAppDelegate?.onNew(notification: notification) {
+                if let response = await self.inAppDelegate?.onNew(notification: notification) {
                     switch response {
                     case .show: await self.show(notification: notification)
                     case .consume: await self.consume(notification: notification)
