@@ -10,7 +10,7 @@ public protocol InAppDelegate: AnyObject {
     func onNew(notification: ParcelvoyNotification) async -> InAppDisplayState
     func didDisplay(notification: ParcelvoyNotification)
     func handle(action: InAppAction, context: [String: Any], notification: ParcelvoyNotification)
-    func onError(error: Error)
+    func onError(error: Error, source: Parcelvoy.ErrorSource)
 }
 
 extension InAppDelegate {
@@ -18,5 +18,5 @@ extension InAppDelegate {
     public var useDarkMode: Bool { false }
     public func onNew(notification: ParcelvoyNotification) async -> InAppDisplayState { .show }
     public func didDisplay(notification: ParcelvoyNotification) {}
-    public func onError(error: Error) {}
+    public func onError(error: Error, source: Parcelvoy.ErrorSource) {}
 }

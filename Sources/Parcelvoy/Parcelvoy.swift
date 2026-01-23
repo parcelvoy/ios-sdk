@@ -9,6 +9,12 @@ public class Parcelvoy {
         case deviceId
     }
 
+    public enum ErrorSource {
+        case getNotifications
+        case consumeNotification
+        case popupWebView
+    }
+
     public static let shared = Parcelvoy()
 
     public var externalId: String? {
@@ -231,7 +237,7 @@ public class Parcelvoy {
                 }
             }
         } catch {
-            self.inAppDelegate?.onError(error: error)
+            self.inAppDelegate?.onError(error: error, source: .getNotifications)
         }
     }
 
@@ -261,7 +267,7 @@ public class Parcelvoy {
         do {
             try await self.network?.put(path: "notifications/\(notification.id)", object: Alias(anonymousId: anonymousId, externalId: externalId))
         } catch let error {
-            self.inAppDelegate?.onError(error: error)
+            self.inAppDelegate?.onError(error: error, source: .consumeNotification)
         }
     }
 
@@ -407,7 +413,7 @@ extension Parcelvoy: InAppModelViewControllerDelegate {
         }
     }
 
-    func onError(error: any Error) {
-        inAppDelegate?.onError(error: error)
+    func onError(error: any Error, source: Parcelvoy.ErrorSource) {
+        inAppDelegate?.onError(error: error, source: source)
     }
 }

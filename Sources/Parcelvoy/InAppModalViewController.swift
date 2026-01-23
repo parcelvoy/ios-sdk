@@ -9,7 +9,7 @@ protocol InAppModelViewControllerDelegate: AnyObject {
     var useDarkMode: Bool { get }
     func didDisplay(notification: ParcelvoyNotification)
     func handle(action: InAppAction, context: [String: Any], notification: ParcelvoyNotification)
-    func onError(error: Error)
+    func onError(error: Error, source: Parcelvoy.ErrorSource)
 }
 
 class InAppModalViewController: UIViewController {
@@ -83,7 +83,7 @@ extension InAppModalViewController: WKNavigationDelegate, WKScriptMessageHandler
     private static var removeDarkMode: String = "document.documentElement.classList.remove('darkMode');"
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        delegate?.onError(error: error)
+        delegate?.onError(error: error, source: .popupWebView)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
